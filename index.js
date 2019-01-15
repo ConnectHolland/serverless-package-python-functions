@@ -206,7 +206,8 @@ class PkgPyFuncs {
     this.log("Add Functions Includes...")
     _.forEach(includes, (item) => {
       if(Fse.lstatSync(Path.resolve(item)).isDirectory()) {
-        Fse.copySync(item, Path.resolve(buildPath))
+        Fse.copySync(item, Path.resolve(buildPath, item))
+        // Fse.copySync(item, Path.resolve(buildPath))
       } else {
         Fse.copySync(item, Path.resolve(buildPath, item))
       }
@@ -214,7 +215,7 @@ class PkgPyFuncs {
 
     // Install requirements
     if (!skip) {
-      let requirements = [requirementsPath]
+      let requirements = _.map(includes, (item) => Path.join(buildPath, item, this.requirementsFile))
       if (this.globalRequirements) {
         requirements = _.concat(requirements, this.globalRequirements)
       }
