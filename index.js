@@ -66,6 +66,19 @@ class PkgPyFuncs {
     return info
   }
 
+  selectOne() {
+    const target = this.serverless.service.functions[this.options.function]
+    return [
+      {
+        name: target.name,
+        requirePackages: target.requirePackages,
+        includes: target.package.include,
+        excludes: target.package.exclude,
+        skip: target.skipPkgPyFuncs
+      }
+    ]
+  }
+
 
   installRequirements(buildPath, requirementsPath){
 
@@ -224,6 +237,13 @@ class PkgPyFuncs {
         .then( () => { Fse.ensureDirAsync(this.buildDir) })
         .then(this.setupDocker)
         .then(this.selectAll)
+        .map(this.makePackage),
+
+      'before:deploy:function:packageFunction': () => BbPromise.bind(this)
+        .then(this.fetchConfig)
+        .then( () => { Fse.ensureDirAsync(this.buildDir) })
+        .then(this.setupDocker)
+        .then(this.selectOne)
         .map(this.makePackage),
 
       'after:deploy:deploy': () => BbPromise.bind(this)
