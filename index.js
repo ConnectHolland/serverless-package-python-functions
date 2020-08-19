@@ -8,6 +8,7 @@ const ChildProcess = require('child_process');
 const zipper = require('zip-local');
 const upath = require('upath');
 const readlineSync = require('readline-sync');
+const path = require("path");
 
 BbPromise.promisifyAll(Fse);
 
@@ -25,6 +26,7 @@ class PkgPyFuncs {
       this.error("No serverless-package-python-functions configuration detected. Please see documentation")
     }
     this.requirementsFile = config.requirementsFile || 'requirements.txt'
+    this.usePoetry = config.usePoetry || false
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
     this.globalRequirements = config.globalRequirements || []
     this.globalIncludes = config.globalIncludes || []
@@ -98,6 +100,23 @@ class PkgPyFuncs {
 
   installRequirements(buildPath, requirementsPath){
 
+    if(this.usePoetry) {
+        // Generate requirements.txt using Poetry.
+        let poetryArgs = [
+                       'export',
+                       '--without-hashes',
+                       '-f',
+                       'requirements.txt',
+                       '-o',
+                       'requirements.txt'
+                     ]
+
+        let output = this.runProcess('poetry', poetryArgs,
+        {
+          cwd: path.dirname(requirementsPath)
+        })
+    }
+
     if ( !Fse.pathExistsSync(requirementsPath) ) {
       return
     }
@@ -128,8 +147,8 @@ class PkgPyFuncs {
     this.log(`Using Docker ${out}`)
   }
 
-  runProcess(cmd,args){
-    const ret = ChildProcess.spawnSync(cmd,args)
+  runProcess(cmd,args,options){
+    const ret = ChildProcess.spawnSync(cmd,args,options)
     if (ret.error){
       throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
     }
